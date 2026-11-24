@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruta Marketing Digital · Dashboard de Gamificación</title>
+<style>
+:root{
+  --bg1:#0f0c29; --bg2:#302b63; --bg3:#24243e;
+  --card:rgba(255,255,255,.06); --card2:rgba(255,255,255,.09);
+  --border:rgba(255,255,255,.14); --txt:#f2f3fb; --muted:#a6abcd;
+  --c1:#00f5d4; --c2:#f15bb5; --c3:#fee440; --c4:#9b5de5; --c5:#00bbf9;
+  --ok:#2dd881; --err:#ff5470; --r:20px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  margin:0; color:var(--txt);
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%) fixed;
+  min-height:100vh; line-height:1.5;
+}
+.bg-fx{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none}
+.bg-fx::before,.bg-fx::after{content:''; position:absolute; width:44vw; height:44vw; border-radius:50%; filter:blur(90px); opacity:.28}
+.bg-fx::before{background:var(--c4); top:-12vw; right:-10vw}
+.bg-fx::after{background:var(--c5); bottom:-14vw; left:-12vw}
+.hidden{display:none!important}
+
+/* ---------- header ---------- */
+.topbar{
+  position:sticky; top:0; z-index:30;
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
+  padding:12px clamp(12px,3vw,28px);
+  background:rgba(15,12,41,.82); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex; align-items:center; gap:12px; margin-right:auto}
+.brand .logo{font-size:clamp(1.7rem,5vw,2.3rem); filter:drop-shadow(0 0 10px var(--c4))}
+.brand h1{margin:0; font-size:clamp(1.02rem,3.4vw,1.45rem); letter-spacing:.4px}
+.brand p{margin:0; font-size:.74rem; color:var(--muted)}
+.hud{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.pill{
+  display:inline-flex; align-items:center; gap:6px; font-weight:800;
+  padding:7px 13px; border-radius:999px; border:1px solid var(--border);
+  background:var(--card); font-size:.88rem; white-space:nowrap;
+}
+.pill.xp-pill{color:var(--c3); box-shadow:0 0 14px rgba(254,228,64,.12)}
+.pill.lvl-pill{color:var(--c1); box-shadow:0 0 14px rgba(0,245,212,.12)}
+.icon-btn{
+  background:var(--card); border:1px solid var(--border); color:var(--txt);
+  border-radius:999px; width:38px; height:38px; font-size:1.05rem; cursor:pointer;
+  transition:transform .15s, background .15s;
+}
+.icon-btn:hover{background:var(--card2); transform:scale(1.08)}
+.xpbar-wrap{position:relative; height:10px; background:rgba(255,255,255,.08); border-radius:999px; margin:0 clamp(12px,3vw,28px); overflow:visible}
+.xpbar{height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,var(--c1),var(--c5),var(--c2)); transition:width .6s ease; box-shadow:0 0 12px rgba(0,245,212,.5)}
+.xp-next{position:absolute; right:0; top:12px; font-size:.68rem; color:var(--muted)}
+
+/* ---------- layout ---------- */
+main{padding:22px clamp(12px,3vw,28px) 60px; max-width:1180px; margin:0 auto}
+section h2{margin:0 0 4px; font-size:clamp(1.15rem,3.6vw,1.5rem)}
+.sub{color:var(--muted); font-size:.88rem; margin:0 0 16px}
+
+/* ---------- roadmap ---------- */
+.phase-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px; margin-top:14px}
+.phase-card{
+  background:var(--card); border:1.5px solid var(--border); border-radius:var(--r);
+  padding:16px; cursor:pointer; transition:transform .18s, border-color .18s, box-shadow .18s;
+  position:relative; overflow:hidden;
+}
+.phase-card:hover{transform:translateY(-4px)}
+.phase-card .num{
+  position:absolute; right:12px; top:8px; font-size:2.6rem; font-weight:900; opacity:.09;
+}
+.phase-card .picon{font-size:1.9rem}
+.phase-card h3{margin:8px 0 2px; font-size:1rem}
+.phase-card .pdesc{font-size:.76rem; color:var(--muted); margin:0 0 10px}
+.status{
+  display:inline-block; font-size:.7rem; font-weight:800; padding:4px 10px; border-radius:999px;
+  border:1px solid var(--border); color:var(--muted); letter-spacing:.4px;
+}
+.phase-card.active{border-color:var(--c5); box-shadow:0 0 18px rgba(0,187,249,.18)}
+.phase-card.active .status{color:var(--c5); border-color:var(--c5)}
+.phase-card.done{border-color:var(--ok); box-shadow:0 0 18px rgba(45,216,129,.15)}
+.phase-card.done .status{color:var(--ok); border-color:var(--ok)}
+.phase-card.locked{opacity:.55; filter:saturate(.5)}
+.ptrack{height:7px; background:rgba(255,255,255,.09); border-radius:999px; margin-top:12px; overflow:hidden}
+.pfill{height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,var(--c1),var(--c5)); transition:width .5s}
+
+/* ---------- fases ---------- */
+.phase{
+  background:var(--card); border:1.5px solid var(--border); border-radius:var(--r);
+  padding:clamp(16px,3vw,26px); margin-top:26px; position:relative; scroll-margin-top:90px;
+}
+.phase-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.phase-head .big{font-size:1.9rem}
+.phase-head h2{margin:0}
+.phase-tag{margin-left:auto; font-size:.72rem; font-weight:800; padding:5px 12px; border-radius:999px; border:1px solid var(--border); color:var(--muted)}
+.phase.done .phase-tag{color:var(--ok); border-color:var(--ok)}
+.phase.active .phase-tag{color:var(--c5); border-color:var(--c5)}
+.phase-body{margin-top:16px; transition:filter .3s}
+.phase.locked .phase-body{filter:blur(7px); pointer-events:none; user-select:none; min-height:120px}
+.lockbox{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; text-align:center; z-index:2; border-radius:var(--r); background:rgba(15,12,41,.45);
+}
+.lockbox .lk{font-size:2.4rem}
+.lockbox p{margin:0; color:var(--muted); font-size:.9rem; max-width:420px}
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  background:linear-gradient(90deg,var(--c4),var(--c2)); color:#fff;
+  border:none; border-radius:14px; padding:11px 20px; font-weight:800; font-size:.92rem;
+  transition:transform .15s, box-shadow .15s; letter-spacing:.3px;
+}
+.btn:hover{transform:translateY(-2px); box-shadow:0 6px 18px rgba(155,93,229,.4)}
+.btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none}
+.btn.ghost{background:var(--card2); border:1px solid var(--border); color:var(--txt)}
+.btn.small{padding:7px 14px; font-size:.8rem; border-radius:11px}
+.btn.okb{background:linear-gradient(90deg,#0e9f6e,var(--ok))}
+
+/* ---------- fase 1 sopa ---------- */
+.sopa-layout{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start}
+.words-col{flex:0 1 250px; min-width:230px}
+.words-col h3{margin:0 0 10px; font-size:.95rem; color:var(--c3)}
+.wlist{display:flex; flex-direction:column; gap:7px}
+.wchip{
+  display:flex; align-items:center; gap:9px; padding:8px 11px; border-radius:12px;
+  background:var(--card2); border:1px solid var(--border); font-weight:700; font-size:.85rem;
+  transition:opacity .3s;
+}
+.wchip .dot{width:11px; height:11px; border-radius:50%; flex:none; background:var(--wc,var(--c5)); box-shadow:0 0 8px var(--wc,var(--c5))}
+.wchip.found{opacity:.45; text-decoration:line-through; border-color:var(--ok)}
+.wchip.found .dot{background:var(--ok)!important; box-shadow:none}
+.sopa-box{flex:1 1 420px; min-width:280px; max-width:640px}
+.sopa-grid{display:grid; grid-template-columns:repeat(20,1fr); gap:2px; touch-action:none; user-select:none}
+.scell{
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:4px; background:rgba(255,255,255,.08); border:none;
+  font-weight:700; font-size:clamp(8px,2.1vw,16px); color:#dfe2f7; padding:0;
+  cursor:pointer; font-family:inherit; transition:background .12s;
+}
+.scell:hover{background:rgba(255,255,255,.18)}
+.scell.sel{background:rgba(254,228,64,.35); outline:1.5px solid var(--c3); color:#fff}
+.scell.found{background:var(--wc); color:#0d0d1c; font-weight:900; opacity:.92}
+.scell.pulse{animation:pulse 1.6s ease 2}
+.sopa-hintbar{display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap}
+.sopa-note{font-size:.75rem; color:var(--muted)}
+
+/* ---------- fase 2 tarjetas ---------- */
+.cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px}
+.fcard{height:265px; perspective:1100px; cursor:pointer; position:relative}
+.fcard-inner{position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .55s cubic-bezier(.4,.1,.2,1)}
+.fcard.flip .fcard-inner{transform:rotateY(180deg)}
+.fface{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:16px; padding:16px; overflow:auto; display:flex; flex-direction:column;
+}
+.fface.front{align-items:center; justify-content:center; text-align:center; gap:8px; border:1px solid var(--border)}
+.fface.front .cicon{font-size:2.1rem}
+.fface.front h3{margin:0; font-size:1.02rem; line-height:1.3}
+.fface.front .tap{font-size:.7rem; color:rgba(255,255,255,.75); margin-top:6px}
+.fface.back{transform:rotateY(180deg); background:#171a38; border:1px solid var(--border)}
+.fface.back h4{margin:0 0 6px; color:var(--c1); font-size:.95rem}
+.fface.back p{margin:0 0 8px; font-size:.8rem; color:#e8eaf8}
+.fface.back .fact{font-size:.72rem; color:var(--c3); background:rgba(254,228,64,.08); border:1px dashed rgba(254,228,64,.4); border-radius:10px; padding:7px 9px}
+.readbtn{margin-top:auto; align-self:stretch; justify-content:center}
+.fcard.read{outline:2px solid var(--ok); outline-offset:2px; border-radius:16px}
+.fcard .readbadge{
+  position:absolute; top:-9px; right:-7px; z-index:3; background:var(--ok); color:#05240f;
+  font-size:.68rem; font-weight:900; padding:4px 10px; border-radius:999px; box-shadow:0 3px 10px rgba(45,216,129,.4);
+}
+.g2{background:linear-gradient(135deg,#9b5de5,#5b2ea6)}
+.g3{background:linear-gradient(135deg,#f15bb5,#a32e77)}
+.g4{background:linear-gradient(135deg,#00bbf9,#0077b3)}
+.g5{background:linear-gradient(135deg,#00f5d4,#00a48c)}
+.g6{background:linear-gradient(135deg,#fee440,#c9a500)}
+.g7{background:linear-gradient(135deg,#ff6b6b,#b3325b)}
+.g8{background:linear-gradient(135deg,#4cc9f0,#3a0ca3)}
+.g9{background:linear-gradient(135deg,#b5179e,#7209b7)}
+.g10{background:linear-gradient(135deg,#f8961e,#c05600)}
+
+/* ---------- fase 3 adivinanzas ---------- */
+.riddle{
+  background:var(--card2); border:1.5px solid var(--border); border-radius:16px;
+  padding:15px 17px; margin-bottom:13px; transition:border-color .3s, background .3s;
+}
+.riddle .rq{font-weight:700; margin:0 0 4px; font-size:.95rem}
+.riddle .rn{font-size:.7rem; font-weight:900; color:var(--c4); letter-spacing:1px}
+.ans-row{display:flex; gap:9px; margin-top:10px; flex-wrap:wrap}
+.ans-row input{
+  flex:1 1 190px; min-width:0; background:rgba(255,255,255,.07); border:1.5px solid var(--border);
+  color:#fff; border-radius:12px; padding:10px 14px; font-size:.95rem; font-weight:700; font-family:inherit;
+}
+.ans-row input:focus{outline:2px solid var(--c5)}
+.riddle.solved{border-color:var(--ok); background:rgba(45,216,129,.07)}
+.riddle.solved input{border-color:var(--ok); color:var(--ok)}
+.feedback{margin-top:8px; font-size:.8rem; font-weight:700; min-height:1em}
+.feedback.bad{color:var(--err)}
+.feedback.good{color:var(--ok)}
+.hintbox{margin-top:8px; font-size:.8rem; color:var(--c3); background:rgba(254,228,64,.07); border-radius:10px; padding:7px 10px; border:1px dashed rgba(254,228,64,.35)}
+.riddle-actions{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+
+/* ---------- fase 4 crucigrama ---------- */
+.cross-wrap{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start}
+.cross-left{flex:0 1 auto; min-width:0; max-width:100%; overflow-x:auto; padding-bottom:6px}
+.cross-grid{display:grid; gap:2px; --cs:clamp(20px,6vw,32px); grid-template-columns:repeat(14, var(--cs,32px))}
+.ccell{position:relative; width:var(--cs,32px); height:var(--cs,32px)}
+.ccell.blank{visibility:hidden}
+.ccell input{
+  width:100%; height:100%; border:1.5px solid var(--border); border-radius:6px;
+  background:rgba(255,255,255,.09); color:#fff; text-align:center; text-transform:uppercase;
+  font-weight:800; font-size:clamp(12px,3.4vw,17px); font-family:inherit; padding:0;
+}
+.ccell input:focus{outline:2px solid var(--c5)}
+.ccell .n{position:absolute; top:0; left:3px; font-size:9px; font-weight:900; color:var(--c3); pointer-events:none; z-index:2; text-shadow:0 1px 2px #000}
+.ccell.hl input{background:rgba(0,187,249,.22)}
+.ccell.act input{border-color:var(--c5); box-shadow:0 0 8px rgba(0,187,249,.35)}
+.ccell.ok input{background:rgba(45,216,129,.22); border-color:var(--ok); color:var(--ok)}
+.ccell.bad input{background:rgba(255,84,112,.22); border-color:var(--err); animation:shake .35s}
+.clues{flex:1 1 300px; min-width:270px}
+.clues h3{font-size:.95rem; margin:0 0 8px; color:var(--c5)}
+.clues h3.vh{color:var(--c2)}
+.clue{padding:7px 10px; border-radius:10px; cursor:pointer; font-size:.84rem; border:1px solid transparent; margin-bottom:5px}
+.clue b{color:var(--c3); margin-right:5px}
+.clue:hover{background:var(--card2)}
+.clue.act{background:rgba(0,187,249,.13); border-color:var(--c5)}
+.clue.done{opacity:.5}
+.clue.done span{ text-decoration:line-through}
+.cross-bar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px}
+.cross-note{font-size:.75rem; color:var(--muted)}
+
+/* ---------- final ---------- */
+.finale{
+  margin-top:30px; text-align:center; border:2px solid var(--c3); border-radius:26px;
+  background:linear-gradient(160deg,rgba(254,228,64,.09),rgba(241,91,181,.09));
+  padding:clamp(20px,4vw,38px); position:relative; overflow:hidden; scroll-margin-top:90px;
+}
+.finale h2{font-size:clamp(1.4rem,5vw,2.1rem); margin:6px 0}
+.finale .fsun{font-size:2.6rem; animation:float 2.6s ease-in-out infinite}
+.name-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:16px 0}
+.name-row input{
+  background:rgba(255,255,255,.08); border:1.5px solid var(--border); color:#fff; border-radius:14px;
+  padding:11px 16px; font-size:1rem; font-weight:700; width:min(320px,80vw); text-align:center; font-family:inherit;
+}
+#badgeCanvas{max-width:560px; width:100%; height:auto; border-radius:22px; margin:14px auto 4px; display:block; box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.finale .fdesc{color:var(--muted); font-size:.9rem; max-width:560px; margin:10px auto 0}
+.finale .stats{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px}
+.finale .stat{background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:10px 18px; font-weight:800; font-size:.9rem}
+.finale .stat b{color:var(--c3)}
+
+/* ---------- modal / toast / confetti ---------- */
+.modal-back{position:fixed; inset:0; z-index:60; background:rgba(6,5,22,.72); backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; padding:22px}
+.modal-card{
+  background:#1b1e42; border:1.5px solid var(--border); border-radius:24px; max-width:430px; width:100%;
+  padding:28px 26px; text-align:center; animation:pop .4s cubic-bezier(.2,1.4,.4,1);
+}
+.modal-card .mi{font-size:3rem}
+.modal-card h3{margin:8px 0 6px; font-size:1.35rem}
+.modal-card p{color:var(--muted); font-size:.92rem; margin:0 0 18px}
+#confettiCv{position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:55}
+.toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+  background:#222552; border:1px solid var(--border); color:var(--txt); padding:11px 20px;
+  border-radius:999px; font-weight:700; font-size:.88rem; opacity:0; transition:all .3s; z-index:70;
+  pointer-events:none; max-width:88vw; text-align:center;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes pop{from{transform:scale(.7); opacity:0}to{transform:scale(1); opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(254,228,64,.7)}50%{box-shadow:0 0 0 7px rgba(254,228,64,0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@media (max-width:640px){
+  .brand p{display:none}
+  .fcard{height:285px}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎯</span>
+    <div>
+      <h1>Ruta Marketing Digital</h1>
+      <p>Sopa de letras · Lectura · Adivinanzas · Crucigrama</p>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="pill xp-pill">⚡ <b id="xpVal">0</b>/720 XP</div>
+    <div class="pill lvl-pill" id="lvlPill">🏅 Novato</div>
+    <button class="icon-btn" id="soundBtn" title="Activar o silenciar sonido" aria-label="Sonido">🔊</button>
+    <button class="icon-btn" id="resetBtn" title="Reiniciar progreso" aria-label="Reiniciar">↺</button>
+  </div>
+</header>
+<div class="xpbar-wrap" title="Progreso de XP">
+  <div class="xpbar" id="xpBar"></div>
+  <span class="xp-next" id="xpNext"></span>
+</div>
+
+<main>
+  <!-- ============ MAPA ============ -->
+  <section id="roadmap">
+    <h2>🗺️ Tu mapa de aventura</h2>
+    <p class="sub">Supera cada fase en orden para desbloquear la siguiente. Al terminar las cuatro recibirás la <b>Insignia MASTER</b>. Tu progreso se guarda automáticamente en este navegador.</p>
+    <div class="phase-grid">
+      <div class="phase-card active" data-go="phase1">
+        <span class="num">1</span><div class="picon">🔍</div>
+        <h3>Sopa de letras gigante</h3><p class="pdesc">Encuentra las 20 palabras clave de las imágenes</p>
+        <span class="status">En curso ▶️</span>
+        <div class="ptrack"><div class="pfill" data-bar="1"></div></div>
+      </div>
+      <div class="phase-card locked" data-go="phase2">
+        <span class="num">2</span><div class="picon">📖</div>
+        <h3>Tarjetas de lectura</h3><p class="pdesc">Aprende la definición de cada concepto</p>
+        <span class="status">Bloqueada 🔒</span>
+        <div class="ptrack"><div class="pfill" data-bar="2"></div></div>
+      </div>
+      <div class="phase-card locked" data-go="phase3">
+        <span class="num">3</span><div class="picon">🧩</div>
+        <h3>Reto ¿Quién soy?</h3><p class="pdesc">Resuelve las 8 adivinanzas</p>
+        <span class="status">Bloqueada 🔒</span>
+        <div class="ptrack"><div class="pfill" data-bar="3"></div></div>
+      </div>
+      <div class="phase-card locked" data-go="phase4">
+        <span class="num">4</span><div class="picon">✍️</div>
+        <h3>Crucigrama final</h3><p class="pdesc">10 palabras nuevas de marketing</p>
+        <span class="status">Bloqueada 🔒</span>
+        <div class="ptrack"><div class="pfill" data-bar="4"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 1 ============ -->
+  <section class="phase active" id="phase1">
+    <div class="phase-head">
+      <span class="big">🔍</span>
+      <h2>Fase 1 · Sopa de letras gigante</h2>
+      <span class="phase-tag">20 × 20</span>
+    </div>
+    <p class="sub">Las palabras provienen de los <b>Temas Clave</b> del módulo de marketing (las imágenes de clase). Arrastra el dedo o el mouse sobre las letras —en cualquier dirección, incluso al revés— para marcarlas. Encuentra las <b>20</b> para pasar a la Fase 2.</p>
+    <div class="phase-body">
+      <div class="sopa-layout">
+        <div class="words-col">
+          <h3>Palabras (<span id="sopaCount">0</span>/20)</h3>
+          <div class="wlist" id="wordList"></div>
+          <div class="sopa-hintbar">
+            <button class="btn ghost small" id="sopaHintBtn">💡 Pista (<span id="sopaHintsLeft">3</span>)</button>
+            <span class="sopa-note">La pista parpadea la primera letra de una palabra pendiente.</span>
+          </div>
+        </div>
+        <div class="sopa-box">
+          <div class="sopa-grid" id="sopaGrid" aria-label="Sopa de letras"></div>
+        </div>
+      </div>
+    </div>
+    <div class="lockbox hidden"><div class="lk">🔒</div><p>Completa la Fase 1 para desbloquear esta actividad.</p></div>
+  </section>
+
+  <!-- ============ FASE 2 ============ -->
+  <section class="phase locked" id="phase2">
+    <div class="phase-head">
+      <span class="big">📖</span>
+      <h2>Fase 2 · Tarjetas de lectura</h2>
+      <span class="phase-tag" id="cardsTag">0/20 leídas</span>
+    </div>
+    <p class="sub">Toca cada tarjeta para voltearla y lee la <b>definición</b> de cada palabra que encontraste en la sopa de letras. Marca las 20 como leídas para desbloquear el reto de adivinanzas.</p>
+    <div class="phase-body">
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+    <div class="lockbox hidden"><div class="lk">🔒</div><p>Encuentra las 20 palabras de la sopa de letras para desbloquear las tarjetas de lectura.</p></div>
+  </section>
+
+  <!-- ============ FASE 3 ============ -->
+  <section class="phase locked" id="phase3">
+    <div class="phase-head">
+      <span class="big">🧩</span>
+      <h2>Fase 3 · Reto de adivinanzas: ¿Quién soy?</h2>
+      <span class="phase-tag" id="riddleTag">0/8 resueltas</span>
+    </div>
+    <p class="sub">Lee la pista y escribe el concepto que estudiaste en las tarjetas. Si te atoras, pide una <b>💡 pista</b> después de 2 intentos. Resuelve las 8 para desbloquear el crucigrama.</p>
+    <div class="phase-body">
+      <div id="riddlesList"></div>
+    </div>
+    <div class="lockbox hidden"><div class="lk">🔒</div><p>Lee las 20 tarjetas de la Fase 2 para desbloquear el reto ¿Quién soy?.</p></div>
+  </section>
+
+  <!-- ============ FASE 4 ============ -->
+  <section class="phase locked" id="phase4">
+    <div class="phase-head">
+      <span class="big">✍️</span>
+      <h2>Fase 4 · Crucigrama final</h2>
+      <span class="phase-tag" id="crossTag">0/10 palabras</span>
+    </div>
+    <p class="sub">Ahora el reto es nuevo: 10 palabras <b>relacionadas con el marketing digital</b> pero <b>diferentes</b> a las de las imágenes. Toca una pista para activar su palabra y escribe las letras. Escribe <b>SIN TILDES</b>. Completa las 10 para ganar tu insignia.</p>
+    <div class="phase-body">
+      <div class="cross-wrap">
+        <div class="cross-left">
+          <div class="cross-grid" id="crossGrid"></div>
+        </div>
+        <div class="clues">
+          <h3>➡️ Horizontales</h3>
+          <div id="cluesH"></div>
+          <h3 class="vh" style="margin-top:14px">⬇️ Verticales</h3>
+          <div id="cluesV"></div>
+        </div>
+      </div>
+      <div class="cross-bar">
+        <button class="btn okb small" id="crossCheck">✔ Comprobar todo</button>
+        <button class="btn ghost small" id="crossHint">🔓 Revelar letra (<span id="crossHintsLeft">5</span>)</button>
+        <span class="cross-note">Tip: al escribir, el cursor avanza solo dentro de la palabra.</span>
+      </div>
+    </div>
+    <div class="lockbox hidden"><div class="lk">🔒</div><p>Resuelve las 8 adivinanzas de la Fase 3 para desbloquear el crucigrama.</p></div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="finale hidden" id="finale">
+    <div class="fsun">🏆</div>
+    <h2>¡Ruta completada! Ganaste la Insignia MASTER</h2>
+    <p class="fdesc">Superaste las 4 fases: sopa de letras, lectura, adivinanzas y crucigrama. Escribe tu nombre para personalizar tu insignia y descárgala.</p>
+    <div class="name-row">
+      <input id="nameInput" maxlength="28" placeholder="Escribe tu nombre aquí…" autocomplete="off">
+    </div>
+    <canvas id="badgeCanvas" width="1120" height="640"></canvas>
+    <div class="stats">
+      <div class="stat">⚡ <b id="fXP">720</b> XP</div>
+      <div class="stat">🏅 Nivel <b>MASTER</b></div>
+      <div class="stat">📅 <b id="fDate"></b></div>
+    </div>
+    <div class="name-row">
+      <button class="btn" id="dlBadge">⬇️ Descargar mi insignia (PNG)</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal-back hidden" id="modal">
+  <div class="modal-card">
+    <div class="mi" id="mIcon">🎉</div>
+    <h3 id="mTitle">¡Fase superada!</h3>
+    <p id="mText">Has desbloqueado la siguiente fase.</p>
+    <button class="btn" id="mBtn">Continuar ▶️</button>
+  </div>
+</div>
+<canvas id="confettiCv"></canvas>
+<div class="toast" id="toast"></div>
+<script>
+const DATA_PUZZLES = {"sopa": {"size": 20, "grid": ["IDRRTJRCGDNYVZLAERAP", "EQTUTAONUIVRRDXKSDID", "STOTNEIMIDNERPMENLCV", "RMOCINAGRODUDOOOMANL", "JARWAICNESERPSIAEREM", "LZUNEBGLVQCRTSKTNOIU", "ELOPSBGNITEKRAMPTERN", "SCEORTGAIRINAREEATES", "EOSSMORCSLAEOOSRLNPY", "LNAEGRTLANLRDTGSIEXO", "AAWHARMONLCEJONODIEA", "NIITUSVOTEJPTXDNALCM", "ACOPYWRITINGUYIADCEF", "CSRTALIUYCPLCSRDMBRE", "OMTIUNVCBAPOBAOOVALI", "VAKEAQTDETICOHABTORS", "ERPBDENKOTLEREEROSSN", "DTSODINETNOCLORJMREL", "VSUIZTNOICIDEMSILEAA", "NLAIDADCAQFGCONCDEII"], "words": [{"w": "EMPRENDIMIENTO", "r": 2, "c": 15, "dr": 0, "dc": -1}, {"w": "STORYTELLING", "r": 16, "c": 17, "dr": -1, "dc": -1}, {"w": "EXPERIENCIA", "r": 10, "c": 18, "dr": -1, "dc": 0}, {"w": "COPYWRITING", "r": 12, "c": 1, "dr": 0, "dc": 1}, {"w": "MENTALIDAD", "r": 3, "c": 16, "dr": 1, "dc": 0}, {"w": "CONTENIDOS", "r": 17, "c": 11, "dr": 0, "dc": -1}, {"w": "MARKETING", "r": 6, "c": 14, "dr": 0, "dc": -1}, {"w": "PRESENCIA", "r": 4, "c": 12, "dr": 0, "dc": -1}, {"w": "PROTOTIPO", "r": 6, "c": 3, "dr": 1, "dc": 1}, {"w": "MEDICION", "r": 18, "c": 13, "dr": 0, "dc": -1}, {"w": "ORGANICO", "r": 3, "c": 9, "dr": 0, "dc": -1}, {"w": "CLIENTE", "r": 12, "c": 17, "dr": -1, "dc": 0}, {"w": "PERSONA", "r": 6, "c": 15, "dr": 1, "dc": 0}, {"w": "CANALES", "r": 13, "c": 0, "dr": -1, "dc": 0}, {"w": "KOTLER", "r": 16, "c": 7, "dr": 0, "dc": 1}, {"w": "SMART", "r": 13, "c": 1, "dr": 1, "dc": 0}, {"w": "ETICO", "r": 15, "c": 8, "dr": 0, "dc": 1}, {"w": "AIDA", "r": 19, "c": 2, "dr": 0, "dc": 1}, {"w": "SEO", "r": 8, "c": 2, "dr": -1, "dc": 0}, {"w": "WEB", "r": 4, "c": 3, "dr": 1, "dc": 1}]}, "cross": {"rows": 14, "cols": 14, "grid": ["..A........V..", "..N.I......E..", "..A.NICHO..N..", "..L.F......T..", "..I.L......A..", "..T.U.ENCUESTA", "..I.E.....C..N", "..CONVERSION.U", "..A.C.....M..N", "....E.....M..C", "..MARCA...E..I", "..........R..O", ".....PUBLICO..", "..........E..."], "words": [{"answer": "ANALITICA", "r": 0, "c": 2, "dir": "V", "clue": "Medición de los datos de un sitio web, como en Google Analytics.", "num": 1}, {"answer": "VENTAS", "r": 0, "c": 11, "dir": "V", "clue": "Operaciones en las que el cliente compra tu producto o servicio.", "num": 2}, {"answer": "INFLUENCER", "r": 1, "c": 4, "dir": "V", "clue": "Persona con muchos seguidores en redes que promociona productos y marcas.", "num": 3}, {"answer": "NICHO", "r": 2, "c": 4, "dir": "H", "clue": "Grupo pequeño y específico de clientes con una necesidad concreta.", "num": 4}, {"answer": "ENCUESTA", "r": 5, "c": 6, "dir": "H", "clue": "Serie de preguntas para conocer la opinión de los clientes.", "num": 5}, {"answer": "ECOMMERCE", "r": 5, "c": 10, "dir": "V", "clue": "Tienda virtual donde se compran y venden productos en línea.", "num": 6}, {"answer": "ANUNCIO", "r": 5, "c": 13, "dir": "V", "clue": "Mensaje pagado para promocionar algo en redes, TV o internet.", "num": 7}, {"answer": "CONVERSION", "r": 7, "c": 2, "dir": "H", "clue": "Cuando un visitante cumple la acción deseada: comprar o registrarse.", "num": 8}, {"answer": "MARCA", "r": 10, "c": 2, "dir": "H", "clue": "Nombre, logo y estilo que identifican a una empresa y la hacen única.", "num": 9}, {"answer": "PUBLICO", "r": 12, "c": 5, "dir": "H", "clue": "Grupo de personas al que va dirigido un producto o una campaña.", "num": 10}]}};
+</script>
+<script>
+/* ===== Contenido educativo: tarjetas (Fase 2) y adivinanzas (Fase 3) · Módulo Marketing ===== */
+const CARDS = [
+  {t:"Emprendimiento", icon:"🚀", g:"g2",
+   d:"Es crear y desarrollar un negocio a partir de una oportunidad, asumiendo riesgos y aportando soluciones que la gente necesita.",
+   ex:"Ejemplo: un grupo de alumnos que fabrica y vende ecoladrillos hechos con botellas PET.",
+   fact:"🚀 Dato: la mentalidad emprendedora también sirve dentro de una empresa; se llama intraemprendimiento."},
+  {t:"Mentalidad emprendedora", icon:"💪", g:"g3",
+   d:"Es la forma de pensar que busca oportunidades, aprende de los errores y actúa con iniciativa y creatividad.",
+   ex:"Ejemplo: en vez de quejarse por la fila del cafetín, crear un sistema de pedidos por app.",
+   fact:"💪 Dato: la mentalidad emprendedora se entrena con práctica; nadie nace sabiendo emprender."},
+  {t:"Marketing", icon:"📣", g:"g4",
+   d:"Es el conjunto de estrategias para conocer a los clientes, crear productos valiosos y comunicarlos para vender más y mejor.",
+   ex:"Ejemplo: una heladería que estudia qué sabores prefiere su público y los promociona en redes.",
+   fact:"📣 Dato: el marketing no es solo vender: también es construir relaciones duraderas con los clientes."},
+  {t:"Cliente", icon:"🤝", g:"g5",
+   d:"Es la persona u organización que compra o usa un producto o servicio. Debe estar en el centro de toda decisión de marketing.",
+   ex:"Ejemplo: para una escuela, sus clientes son los alumnos y sus familias.",
+   fact:"🤝 Dato: conseguir un cliente nuevo puede costar hasta 5 veces más que conservar uno actual."},
+  {t:"Buyer persona", icon:"🎯", g:"g6",
+   d:"Es la representación ficticia y detallada de tu cliente ideal, con nombre, edad, gustos y problemas, para apuntar tus campañas.",
+   ex:"Ejemplo: 'Sofía, 16 años, estudiante, compra skincare y sigue a creadoras de belleza'.",
+   fact:"🎯 Dato: definir tu buyer persona evita gastar en publicidad que la gente equivocada ve."},
+  {t:"Experiencia del cliente", icon:"🗺️", g:"g7",
+   d:"El mapa de experiencia dibuja todos los momentos en que el cliente toca la marca: desde que la descubre hasta que compra (y después).",
+   ex:"Ejemplo: ve un anuncio → visita la web → pregunta → compra → recibe el pedido y una encuesta.",
+   fact:"🗺️ Dato: cada punto de contacto se llama 'touchpoint' y todos deben dejar buena impresión."},
+  {t:"Objetivos SMART", icon:"✅", g:"g8",
+   d:"Método para fijar metas que son Specific (específicas), Measurable (medibles), Achievable (alcanzables), Relevant (relevantes) y Time-bound (con plazo).",
+   ex:"Ejemplo: 'vender 50 camisetas en un mes' en lugar de 'vender más'.",
+   fact:"✅ Dato: un objetivo sin número ni fecha es solo un deseo; SMART lo convierte en plan."},
+  {t:"Marketing ético e inclusivo", icon:"⚖️", g:"g9",
+   d:"Es promocionar productos con honestidad, respetando la diversidad y sin engañar, excluir ni estereotipar a nadie.",
+   ex:"Ejemplo: mostrar en los anuncios personas de diferentes tamaños, edades y capacidades.",
+   fact:"⚖️ Dato: las marcas honestas generan más confianza y clientes más leales."},
+  {t:"Canales de distribución", icon:"🚚", g:"g10",
+   d:"Son los caminos por los que el producto llega del vendedor al cliente final: físicos o digitales.",
+   ex:"Ejemplo: tienda física, tienda en línea, apps de delivery o distribuidores mayoristas.",
+   fact:"🚚 Dato: elegir bien los canales puede decidir el éxito (o el fracaso) de un producto."},
+  {t:"Storytelling", icon:"📖", g:"g2",
+   d:"Es la técnica de contar historias para conectar emocionalmente con la audiencia y hacer memorable una marca.",
+   ex:"Ejemplo: un anuncio que cuenta la historia del abuelo que creó la receta familiar.",
+   fact:"📖 Dato: según estudios de Stanford, las historias se recuerdan hasta 22 veces más que los datos sueltos."},
+  {t:"Medición de resultados", icon:"📊", g:"g3",
+   d:"Es analizar datos (visitas, likes, ventas) para saber si una estrategia funcionó, cuánto costó y cómo mejorarla.",
+   ex:"Ejemplo: comparar las ventas antes y después de una campaña en redes sociales.",
+   fact:"📊 Dato: lo que no se mide no se puede mejorar; por eso existen las métricas o KPI."},
+  {t:"Presencia en línea", icon:"🌐", g:"g4",
+   d:"Es todo lo que se encuentra de una marca en internet: su sitio web, redes sociales, reseñas y ubicación en mapas.",
+   ex:"Ejemplo: un restaurante con menú en Google Maps, fotos en Instagram y respuestas a reseñas.",
+   fact:"🌐 Dato: la mayoría de los clientes busca en internet antes de comprar: tu presencia es tu primera impresión."},
+  {t:"SEO", icon:"🔎", g:"g5",
+   d:"Search Engine Optimization: técnicas para aparecer en los primeros resultados de Google de forma orgánica (sin pagar anuncios).",
+   ex:"Ejemplo: usar en el título y el texto las palabras que la gente realmente busca.",
+   fact:"🔎 Dato: la mayoría de los clics se los llevan los primeros resultados; estar en la página 2 casi no existe."},
+  {t:"Prototipo (Design Thinking)", icon:"🛠️", g:"g6",
+   d:"Es una versión simple y rápida de un producto para probar ideas con usuarios reales antes de invertir más tiempo y dinero.",
+   ex:"Ejemplo: una maqueta de cartón de una app o una página dibujada a mano en papel.",
+   fact:"🛠️ Dato: fallar rápido con un prototipo barato evita gastar en un producto que nadie quiere."},
+  {t:"Marketing de contenidos", icon:"✍️", g:"g7",
+   d:"Es crear contenido útil y entretenido (videos, blogs, publicaciones) para atraer clientes sin perseguirlos con anuncios.",
+   ex:"Ejemplo: una panadería que sube recetas y trucos en vez de solo publicidad directa.",
+   fact:"✍️ Dato: el contenido útil genera confianza: la gente vuelve, comparte y acaba comprando."},
+  {t:"Copywriting", icon:"🖊️", g:"g8",
+   d:"Es el arte de escribir textos persuasivos que motivan al lector a hacer algo: comprar, registrarse o hacer clic.",
+   ex:"Ejemplo: un título como 'Hornea pan como experto en 7 días' en lugar de 'Curso de panadería'.",
+   fact:"🖊️ Dato: cambiar una sola palabra en un titular puede multiplicar el número de clics."},
+  {t:"Modelo AIDA", icon:"🧲", g:"g9",
+   d:"Describe el viaje del cliente en 4 pasos: Atención, Interés, Deseo y Acción. Es la base de casi toda campaña.",
+   ex:"Ejemplo: anuncio llamativo (A) → muestra beneficios (I) → ganas de tenerlo (D) → botón 'comprar' (A).",
+   fact:"🧲 Dato: AIDA lleva más de 100 años usándose y sigue vigente en TikTok, Instagram y Google."},
+  {t:"Sitio web", icon:"💻", g:"g10",
+   d:"Es el 'local digital' de una marca en internet: páginas ordenadas que informan, convencen y venden 24/7.",
+   ex:"Ejemplo: la página de una banda con su música, fechas de conciertos y tienda de camisetas.",
+   fact:"💻 Dato: un sitio web es como un vendedor que nunca duerme ni toma vacaciones."},
+  {t:"Kotler y la evolución", icon:"📚", g:"g2",
+   d:"Philip Kotler, el 'padre del marketing', describe su evolución: del producto (1.0) al cliente (2.0), a los valores (3.0) y a lo digital (4.0).",
+   ex:"Ejemplo: antes se vendía 'una radio'; ahora se vende 'la experiencia de escuchar música sin límites'.",
+   fact:"📚 Dato: su libro 'Dirección de Marketing' es el texto más usado en universidades del mundo."},
+  {t:"Orgánico vs. de pago", icon:"🌱", g:"g3",
+   d:"El marketing orgánico atrae clientes sin pagar (SEO, contenido, recomendaciones); el de pago usa anuncios con inversión directa.",
+   ex:"Ejemplo: un video que se hace viral (orgánico) vs. un anuncio de Instagram (pago).",
+   fact:"🌱 Dato: lo orgánico construye confianza a largo plazo; lo de pago da resultados rápidos pero cuesta dinero."}
+];
+
+const RIDDLES = [
+  {ans:["EMPRENDIMIENTO","EL EMPRENDIMIENTO"], h2:"Empieza con EM… (14 letras)",
+   q:"Soy crear un negocio nuevo a partir de una oportunidad, asumiendo riesgos para resolver un problema de la gente. ¿Quién soy?"},
+  {ans:["MARKETING","EL MARKETING","MARKETING DIGITAL"], h2:"Empieza con MA… (9 letras)",
+   q:"Soy el conjunto de estrategias para conocer, atraer y fidelizar clientes. No soy solo vender: soy crear relaciones. ¿Quién soy?"},
+  {ans:["CLIENTE","EL CLIENTE"], h2:"Empieza con CL… (7 letras)",
+   q:"Soy quien compra lo que ofreces; sin mí no hay negocio. Debo estar en el centro de todas tus decisiones. ¿Quién soy?"},
+  {ans:["PERSONA","BUYER PERSONA","BUYER"], h2:"Empieza con PE… (7 letras)",
+   q:"No existo de verdad: represento a tu cliente ideal con nombre, edad y gustos para que tus campañas den en el blanco. ¿Quién soy?"},
+  {ans:["SMART"], h2:"Son 5 letras: S…M…A…R…T",
+   q:"Soy el método para poner objetivos: específicos, medibles, alcanzables, relevantes y con tiempo. ¿Quién soy?"},
+  {ans:["SEO"], h2:"Son 3 letras: S…E…O",
+   q:"Hago que aparezcas en los primeros resultados de Google sin pagar anuncios, optimizando tu sitio web. ¿Quién soy?"},
+  {ans:["STORYTELLING"], h2:"Son 12 letras y empiezan con ST…",
+   q:"Cuento historias que tocan el corazón de la audiencia para que recuerden la marca y quieran seguirla. ¿Quién soy?"},
+  {ans:["AIDA","MODELO AIDA"], h2:"Son 4 letras: A…I…D…A",
+   q:"Soy el viaje del cliente en 4 pasos: Atención, Interés, Deseo y Acción. Llevo más de 100 años funcionando. ¿Quién soy?"}
+];
+
+</script>
+<script>
+/* ============================================================ utilidades */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const XP_MAX = 720;
+const LEVELS = [[0,'Novato 🌱'],[130,'Aprendiz 📘'],[270,'Explorador 🧭'],[420,'Creador 🎨'],[570,'Experto 🚀'],[720,'MASTER 🏆']];
+const WCOLORS = ['#00f5d4','#f15bb5','#fee440','#00bbf9','#9b5de5','#2dd881','#ff6b6b','#f8961e','#4cc9f0','#b5179e','#80ffdb','#ff9770','#ffd60a','#c77dff','#90e0ef','#ff87ab','#a3ff12','#ff5470','#38bdf8','#fda4af'];
+
+/* ============================================================ estado */
+const KEY = 'rutaMarketingV1';
+function blankState(){
+  return {xp:0, found:[], read:[], riddles:{}, rAttempts:{}, crossCells:{},
+          crossFound:[], crossHints:5, sopaHints:3, phases:{}, name:'', muted:false};
+}
+let S = blankState();
+try{
+  const raw = localStorage.getItem(KEY);
+  if(raw) S = Object.assign(blankState(), JSON.parse(raw));
+}catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ============================================================ sonido */
+let AC = null;
+function sfx(kind){
+  if(S.muted) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if(AC.state === 'suspended') AC.resume();
+    const seq = {ok:[[660,0],[880,.09]], bad:[[220,0],[180,.12]],
+                 click:[[440,0]], win:[[523,0],[659,.12],[784,.24],[1047,.36]]}[kind] || [[440,0]];
+    seq.forEach(([f,d])=>{
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = kind==='bad' ? 'sawtooth' : 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, AC.currentTime + d);
+      g.gain.exponentialRampToValueAtTime(.16, AC.currentTime + d + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + d + .22);
+      o.connect(g); g.connect(AC.destination);
+      o.start(AC.currentTime + d); o.stop(AC.currentTime + d + .25);
+    });
+  }catch(e){}
+}
+
+/* ============================================================ confeti */
+const cv = $('#confettiCv'), cctx = cv.getContext('2d');
+let parts = [], raf = null;
+const CCOLORS = ['#00f5d4','#f15bb5','#fee440','#9b5de5','#00bbf9','#ff6b6b','#2dd881'];
+function sizeCv(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', sizeCv); sizeCv();
+function burst(n, y0){
+  for(let i=0;i<n;i++){
+    parts.push({
+      x: Math.random()*cv.width, y: (y0||-20) - Math.random()*cv.height*.35,
+      vx: (Math.random()-.5)*3.4, vy: 2.4 + Math.random()*3.6,
+      w: 6+Math.random()*7, h: 8+Math.random()*9,
+      rot: Math.random()*Math.PI, vr: (Math.random()-.5)*.24,
+      c: CCOLORS[Math.floor(Math.random()*CCOLORS.length)], life: 240+Math.random()*120
+    });
+  }
+  if(!raf) loopCf();
+}
+function loopCf(){
+  raf = requestAnimationFrame(loopCf);
+  cctx.clearRect(0,0,cv.width,cv.height);
+  parts = parts.filter(p=>p.life>0 && p.y<cv.height+30);
+  if(!parts.length){ cancelAnimationFrame(raf); raf=null; return; }
+  parts.forEach(p=>{
+    p.life--; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=.03;
+    cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot);
+    cctx.fillStyle=p.c; cctx.globalAlpha=Math.min(1,p.life/60);
+    cctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cctx.restore();
+  });
+}
+
+/* ============================================================ toast / modal */
+let toastT = null;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+let modalCb = null;
+function modal(icon, title, text, btn, cb){
+  $('#mIcon').textContent = icon; $('#mTitle').textContent = title;
+  $('#mText').textContent = text; $('#mBtn').textContent = btn;
+  modalCb = cb; $('#modal').classList.remove('hidden');
+}
+$('#mBtn').addEventListener('click', ()=>{
+  $('#modal').classList.add('hidden'); sfx('click');
+  if(modalCb) modalCb();
+});
+
+/* ============================================================ XP y niveles */
+function lvlIdx(xp){ let i=0; LEVELS.forEach((L,k)=>{ if(xp>=L[0]) i=k; }); return i; }
+function renderXP(){
+  const i = lvlIdx(S.xp);
+  $('#xpVal').textContent = S.xp;
+  $('#lvlPill').textContent = '🏅 ' + LEVELS[i][1];
+  $('#xpBar').style.width = (S.xp/XP_MAX*100) + '%';
+  $('#xpNext').textContent = i >= LEVELS.length-1 ? '¡Nivel máximo alcanzado!' :
+    'Faltan ' + (LEVELS[i+1][0]-S.xp) + ' XP para: ' + LEVELS[i+1][1];
+}
+function addXP(n){
+  const before = lvlIdx(S.xp);
+  S.xp = Math.min(XP_MAX, S.xp + n);
+  renderXP(); save();
+  const now = lvlIdx(S.xp);
+  if(now > before){ toast('🚀 ¡Subiste de nivel: ' + LEVELS[now][1] + '!'); sfx('win'); }
+}
+
+/* ============================================================ fases y mapa */
+const PHASE_META = {
+  1:{doneTxt:'Encuentra las palabras de la sopa', need:null},
+  2:{doneTxt:'Lee las tarjetas de la Fase 2', need:'Encuentra las 20 palabras de la sopa de letras para desbloquear las tarjetas de lectura.'},
+  3:{doneTxt:'Resuelve las adivinanzas de la Fase 3', need:'Marca las 20 tarjetas de la Fase 2 como leídas para desbloquear el reto ¿Quién soy?.'},
+  4:{doneTxt:'Completa el crucigrama de la Fase 4', need:'Resuelve las 8 adivinanzas de la Fase 3 para desbloquear el crucigrama.'}
+};
+const PHASE_PROG = {
+  1:()=> [new Set(S.found).size, SOPA_WORDS.length],
+  2:()=> [new Set(S.read).size, CARDS.length],
+  3:()=> [Object.values(S.riddles).filter(Boolean).length, RIDDLES.length],
+  4:()=> [new Set(S.crossFound).size, DATA_PUZZLES.cross.words.length]
+};
+function phaseDone(n){ return !!S.phases[n]; }
+function unlocked(n){ return n===1 || phaseDone(n-1); }
+function renderMap(){
+  for(let n=1;n<=4;n++){
+    const sec = $('#phase'+n), card = $$('.phase-card')[n-1];
+    const [a,b] = PHASE_PROG[n]();
+    card.querySelector('.pfill').style.width = (a/b*100)+'%';
+    const st = card.querySelector('.status');
+    if(phaseDone(n)){ st.textContent = 'Completada ✅'; card.className='phase-card done'; sec.className='phase done'; }
+    else if(unlocked(n)){ st.textContent = 'En curso ▶️'; card.className='phase-card active'; sec.className='phase active'; }
+    else { st.textContent = 'Bloqueada 🔒'; card.className='phase-card locked'; sec.className='phase locked'; }
+    const box = sec.querySelector('.lockbox');
+    if(box) box.classList.toggle('hidden', unlocked(n));
+    sec.querySelector('.phase-body').style.pointerEvents = unlocked(n) ? '' : 'none';
+  }
+}
+$$('.phase-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const n = +card.dataset.go.replace('phase','');
+    if(unlocked(n)){ $('#phase'+n).scrollIntoView({behavior:'smooth'}); sfx('click'); }
+    else { toast('🔒 Primero completa la fase anterior'); sfx('bad'); }
+  });
+});
+function completePhase(n){
+  if(phaseDone(n)) return;
+  S.phases[n] = true; addXP(50); sfx('win'); burst(160);
+  renderMap(); save();
+  if(n===4) showFinale();
+  const titles = {
+    1:['🎉','¡Fase 1 superada!','Encontraste las 20 palabras de la sopa de letras. +50 XP de bonus. Ahora aprende su significado en las tarjetas de lectura.','Ir a las tarjetas 📖'],
+    2:['🤓','¡Fase 2 superada!','Leíste las 20 tarjetas con las definiciones. +50 XP de bonus. Ahora demuestra cuánto aprendiste con las adivinanzas.','Ir al reto 🧩'],
+    3:['🧠','¡Fase 3 superada!','Resolviste las 8 adivinanzas ¿Quién soy?. +50 XP de bonus. Queda el último reto: el crucigrama con palabras nuevas del marketing.','Ir al crucigrama ✍️'],
+    4:['🏆','¡Fase 4 superada!','Completaste el crucigrama final. +50 XP de bonus. ¡Ganaste la INSIGNIA MASTER de la Ruta Marketing Digital!','Ver mi insignia 🏆']
+  }[n];
+  modal(titles[0], titles[1], titles[2], titles[3], ()=>{
+    const target = n===4 ? '#finale' : '#phase'+(n+1);
+    $(target).scrollIntoView({behavior:'smooth'});
+  });
+}
+
+/* ============================================================ FASE 1 · sopa */
+const SG = DATA_PUZZLES.sopa;
+const SOPA_WORDS = SG.words.map(w=>w.w);
+const REV = w => Array.from(w).reverse().join('');
+let foundSet = new Set(S.found.filter(w=>SOPA_WORDS.includes(w)));
+let sopaHints = S.sopaHints;
+
+function buildSopa(){
+  const grid = $('#sopaGrid'); grid.innerHTML='';
+  grid.style.gridTemplateColumns = 'repeat(' + SG.size + ', 1fr)';
+  for(let r=0;r<SG.size;r++) for(let c=0;c<SG.size;c++){
+    const b = document.createElement('button');
+    b.className='scell'; b.textContent = SG.grid[r][c];
+    b.dataset.r=r; b.dataset.c=c; b.setAttribute('aria-label','letra '+SG.grid[r][c]);
+    grid.appendChild(b);
+  }
+  const wl = $('#wordList'); wl.innerHTML='';
+  SOPA_WORDS.forEach((w,i)=>{
+    const d = document.createElement('div');
+    d.className='wchip'; d.dataset.w=w;
+    d.style.setProperty('--wc', WCOLORS[i%WCOLORS.length]);
+    d.innerHTML = '<span class="dot"></span>' + w;
+    wl.appendChild(d);
+  });
+  foundSet.forEach(w=>markFound(w,false));
+  $('#sopaCount').textContent = foundSet.size;
+  $('#sopaHintsLeft').textContent = sopaHints;
+}
+
+function cellAt(r,c){ return $('#sopaGrid').children[r*SG.size+c]; }
+function markFound(w, fx){
+  const i = SOPA_WORDS.indexOf(w), p = SG.words[i], col = WCOLORS[i%WCOLORS.length];
+  for(let k=0;k<w.length;k++){
+    const cell = cellAt(p.r + p.dr*k, p.c + p.dc*k);
+    cell.classList.add('found'); cell.style.setProperty('--wc', col);
+    cell.classList.remove('sel');
+  }
+  const chip = $$('.wchip').find(x=>x.dataset.w===w);
+  if(chip) chip.classList.add('found');
+  if(fx) sfx('ok');
+}
+
+let dragStart=null, dragCells=[];
+function selLine(a,b){
+  const r0=+a.dataset.r, c0=+a.dataset.c, r1=+b.dataset.r, c1=+b.dataset.c;
+  const dr=r1-r0, dc=c1-c0, ad=Math.abs(dr), ad2=Math.abs(dc);
+  if(!(dr===0||dc===0||ad===ad2)) return null;
+  const len=Math.max(ad,ad2), sr=Math.sign(dr||0), sc=Math.sign(dc||0), out=[];
+  for(let k=0;k<=len;k++) out.push(cellAt(r0+sr*k, c0+sc*k));
+  return out;
+}
+function clearSel(){ dragCells.forEach(c=>c.classList.remove('sel')); dragCells=[]; }
+function commitSel(){
+  const str = dragCells.map(c=>c.textContent).join('');
+  if(str.length>=2){
+    const hit = SOPA_WORDS.find(w=>!foundSet.has(w) && (w===str || REV(w)===str));
+    if(hit){
+      foundSet.add(hit);
+      if(!S.found.includes(hit)) S.found.push(hit);
+      addXP(10); markFound(hit,true);
+      $('#sopaCount').textContent = foundSet.size;
+      renderMap(); save();
+      toast('✅ ' + hit + ' encontrada · +10 XP');
+      if(foundSet.size===SOPA_WORDS.length) completePhase(1);
+    } else if(str.length>=3){
+      sfx('bad');
+      dragCells.forEach(c=>{ c.style.background='rgba(255,84,112,.4)';
+        setTimeout(()=>{ c.style.background=''; },350); });
+    }
+  }
+  clearSel(); dragStart=null;
+}
+(function initSopaEvents(){
+  const grid = $('#sopaGrid');
+  grid.addEventListener('pointerdown', e=>{
+    const c = e.target.closest('.scell'); if(!c) return;
+    e.preventDefault(); dragStart=c;
+    clearSel(); dragCells=[c]; c.classList.add('sel');
+  });
+  grid.addEventListener('pointermove', e=>{
+    if(!dragStart) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const c = el && el.closest ? el.closest('.scell') : null;
+    if(!c || (dragCells.length && dragCells[dragCells.length-1]===c)) return;
+    const line = selLine(dragStart, c);
+    if(line){ clearSel(); dragCells=line; line.forEach(x=>x.classList.add('sel')); }
+  });
+  addEventListener('pointerup', ()=>{ if(dragStart) commitSel(); });
+})();
+$('#sopaHintBtn').addEventListener('click', ()=>{
+  const pending = SOPA_WORDS.filter(w=>!foundSet.has(w));
+  if(!pending.length){ toast('¡Ya encontraste todas las palabras!'); return; }
+  if(sopaHints<=0){ toast('Ya no quedan pistas 😅'); return; }
+  sopaHints--; S.sopaHints=sopaHints;
+  const w = pending[Math.floor(Math.random()*pending.length)];
+  const p = SG.words[SOPA_WORDS.indexOf(w)];
+  const cell = cellAt(p.r, p.c);
+  cell.classList.remove('pulse'); void cell.offsetWidth; cell.classList.add('pulse');
+  $('#sopaHintsLeft').textContent = sopaHints;
+  sfx('click'); toast('💡 Busca la palabra ' + w[0] + '…');
+  save();
+});
+
+</script>
+<script>
+/* ============================================================ FASE 2 · tarjetas */
+function buildCards(){
+  const wrap = $('#cardsGrid'); wrap.innerHTML='';
+  CARDS.forEach(card=>{
+    const read = S.read.includes(card.t);
+    const el = document.createElement('div');
+    el.className = 'fcard' + (read ? ' read' : '');
+    el.innerHTML =
+      '<div class="fcard-inner">' +
+        '<div class="fface front ' + card.g + '">' +
+          '<div class="cicon">' + card.icon + '</div>' +
+          '<h3>' + card.t + '</h3>' +
+          '<span class="tap">👆 Toca para leer la definición</span>' +
+        '</div>' +
+        '<div class="fface back">' +
+          '<h4>' + card.t + '</h4>' +
+          '<p>' + card.d + '</p>' +
+          '<p>' + card.ex + '</p>' +
+          '<div class="fact">' + card.fact + '</div>' +
+          '<button class="btn small okb readbtn">✓ Marcar como leída (+5 XP)</button>' +
+        '</div>' +
+      '</div>';
+    if(read){
+      const bd = document.createElement('div');
+      bd.className='readbadge'; bd.textContent='✓ Leída';
+      el.appendChild(bd);
+    }
+    el.addEventListener('click', ()=>{ el.classList.toggle('flip'); sfx('click'); });
+    el.querySelector('.readbtn').addEventListener('click', ev=>{
+      ev.stopPropagation();
+      if(S.read.includes(card.t)) return;
+      S.read.push(card.t); addXP(5); sfx('ok');
+      el.classList.add('read');
+      const bd = document.createElement('div');
+      bd.className='readbadge'; bd.textContent='✓ Leída';
+      el.appendChild(bd);
+      $('#cardsTag').textContent = new Set(S.read).size + '/' + CARDS.length + ' leídas';
+      renderMap(); save();
+      toast('📖 ' + card.t + ' leída · +5 XP');
+      if(new Set(S.read).size===CARDS.length) completePhase(2);
+    });
+    wrap.appendChild(el);
+  });
+  $('#cardsTag').textContent = new Set(S.read).size + '/' + CARDS.length + ' leídas';
+}
+
+/* ============================================================ FASE 3 · adivinanzas */
+const norm = s => (s||'').toUpperCase().normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');
+let riddleRevealed = {};
+
+function riddleSolvedCount(){ return RIDDLES.filter((_,i)=>S.riddles[i]).length; }
+
+function buildRiddles(){
+  const wrap = $('#riddlesList'); wrap.innerHTML='';
+  RIDDLES.forEach((r,i)=>{
+    const solved = !!S.riddles[i];
+    const el = document.createElement('div');
+    el.className = 'riddle' + (solved ? ' solved' : '');
+    el.innerHTML =
+      '<div class="rn">ADIVINANZA ' + (i+1) + ' DE ' + RIDDLES.length + '</div>' +
+      '<p class="rq">🤔 ' + r.q + '</p>' +
+      '<div class="ans-row">' +
+        '<input maxlength="40" placeholder="Escribe tu respuesta…" aria-label="Respuesta ' + (i+1) + '"' + (solved?' disabled':'') + '>' +
+        '<button class="btn small">Responder</button>' +
+      '</div>' +
+      '<div class="feedback"></div>' +
+      '<div class="riddle-actions"></div>' +
+      '<div class="hintbox hidden"></div>';
+    wrap.appendChild(el);
+    const input = el.querySelector('input'), fb = el.querySelector('.feedback');
+    if(solved){
+      input.value = r.ans[0];
+      fb.className='feedback good';
+      fb.textContent = riddleRevealed[i]
+        ? '✅ Respuesta mostrada: ' + r.ans[0] + ' (+5 XP)'
+        : '✅ ¡Correcto! La respuesta era ' + r.ans[0] + ' (+15 XP)';
+    }
+    renderRiddleExtras(el, i);
+    const attempt = ()=>{
+      if(S.riddles[i]) return;
+      const val = norm(input.value);
+      if(!val){ toast('Escribe una respuesta primero'); return; }
+      if(r.ans.some(a=>norm(a)===val)){ solveRiddle(el, i, false); }
+      else{
+        S.rAttempts[i] = (S.rAttempts[i]||0) + 1;
+        fb.className='feedback bad';
+        fb.textContent = '❌ No es esa. Intento ' + S.rAttempts[i] + '… ¡vuelve a releer las tarjetas!';
+        sfx('bad'); save();
+        renderRiddleExtras(el, i);
+      }
+    };
+    el.querySelector('.ans-row .btn').addEventListener('click', attempt);
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter') attempt(); });
+  });
+  $('#riddleTag').textContent = riddleSolvedCount() + '/8 resueltas';
+}
+function renderRiddleExtras(el, i){
+  const r = RIDDLES[i], att = S.rAttempts[i]||0;
+  const act = el.querySelector('.riddle-actions'), hb = el.querySelector('.hintbox');
+  act.innerHTML='';
+  const addHint = (label, text)=>{
+    const b = document.createElement('button');
+    b.className='btn ghost small'; b.textContent=label;
+    b.addEventListener('click', ()=>{ hb.textContent=text; hb.classList.remove('hidden'); sfx('click'); });
+    act.appendChild(b);
+  };
+  if(!S.riddles[i] && att>=2) addHint('💡 Pista 1', '💡 Pista: es uno de los conceptos de las tarjetas de lectura. ' + r.h2);
+  if(!S.riddles[i] && att>=4) addHint('🔑 Pista 2', '🔑 ' + r.h2);
+  if(!S.riddles[i] && att>=6){
+    const b = document.createElement('button');
+    b.className='btn ghost small'; b.textContent='🙈 Mostrar respuesta (+5 XP)';
+    b.addEventListener('click', ()=>{ riddleRevealed[i]=true; solveRiddle(el, i, true); });
+    act.appendChild(b);
+  }
+}
+function solveRiddle(el, i, revealed){
+  S.riddles[i] = true;
+  const xp = revealed ? 5 : 15;
+  addXP(xp); sfx('ok'); burst(70);
+  $('#riddleTag').textContent = riddleSolvedCount() + '/8 resueltas';
+  renderMap(); save();
+  toast('🧩 Adivinanza ' + (i+1) + ' resuelta · +' + xp + ' XP');
+  buildRiddles();
+  const card = $('#riddlesList').children[i];
+  if(card) card.scrollIntoView({block:'nearest', behavior:'smooth'});
+  if(riddleSolvedCount()===RIDDLES.length) completePhase(3);
+}
+
+/* ============================================================ FASE 4 · crucigrama */
+const CG = DATA_PUZZLES.cross;
+let crossWords = [];          // {answer,r,c,dir,num,clue,cells:[{r,c,input,el}]}
+let activeWord = -1, lastCell = null;
+
+function crossKey(r,c){ return r+','+c; }
+function buildCross(){
+  const grid = $('#crossGrid'); grid.innerHTML='';
+  grid.style.gridTemplateColumns = 'repeat(' + CG.cols + ', var(--cs,32px))';
+  const cellMap = {};
+  for(let r=0;r<CG.rows;r++) for(let c=0;c<CG.cols;c++){
+    const ch = CG.grid[r][c];
+    const d = document.createElement('div');
+    d.className = 'ccell' + (ch==='.' ? ' blank' : '');
+    if(ch!=='.'){
+      const inp = document.createElement('input');
+      inp.maxLength=1; inp.autocomplete='off'; inp.spellcheck=false;
+      inp.setAttribute('aria-label','crucigrama fila '+(r+1)+' columna '+(c+1));
+      inp.value = S.crossCells[crossKey(r,c)] || '';
+      d.appendChild(inp);
+      const starts = CG.words.filter(w=>w.r===r && w.c===c);
+      if(starts.length) d.insertAdjacentHTML('beforeend','<span class="n">'+starts[0].num+'</span>');
+      cellMap[crossKey(r,c)] = {r, c, input:inp, el:d, words:[]};
+    }
+    grid.appendChild(d);
+  }
+  crossWords = CG.words.map(w=>{
+    const dr = w.dir==='H'?0:1, dc = w.dir==='H'?1:0;
+    const cells = [];
+    for(let k=0;k<w.answer.length;k++) cells.push(cellMap[crossKey(w.r+dr*k, w.c+dc*k)]);
+    return Object.assign({}, w, {cells});
+  });
+  crossWords.forEach((w,i)=> w.cells.forEach(cell=>cell && cell.words.push(i)));
+
+  const ch=$('#cluesH'), cvv=$('#cluesV'); ch.innerHTML=''; cvv.innerHTML='';
+  crossWords.forEach((w,i)=>{
+    const d = document.createElement('div');
+    d.className='clue'; d.innerHTML='<b>'+w.num+(w.dir==='H'?' ➡️':' ⬇️')+'</b><span> '+w.clue+' ('+w.answer.length+')</span>';
+    d.dataset.i=i;
+    if(wordFound(i)) d.classList.add('done');
+    d.addEventListener('click', ()=>setActive(i, 0));
+    (w.dir==='H'?ch:cvv).appendChild(d);
+  });
+  // eventos: UNA vez por celda
+  Object.values(cellMap).forEach(cell=>{
+    cell.input.addEventListener('focus', ()=>onCellFocus(cell));
+    cell.input.addEventListener('input', ()=>onCellInput(cell));
+    cell.input.addEventListener('keydown', e=>onCellKey(cell, e));
+    const foundIdx = cell.words.find(k=>wordFound(k));
+    if(foundIdx !== undefined){
+      const fw = crossWords[foundIdx];
+      cell.input.value = fw.answer[fw.cells.indexOf(cell)];
+      cell.input.disabled = true; cell.el.classList.add('ok');
+    }
+  });
+  $('#crossHintsLeft').textContent = S.crossHints;
+  updateCrossTag();
+}
+function wordFound(i){ return S.crossFound.includes(crossWords[i].answer); }
+function updateCrossTag(){
+  $('#crossTag').textContent = new Set(S.crossFound).size + '/' + CG.words.length + ' palabras';
+}
+function setActive(i, pos){
+  activeWord = i;
+  $$('.ccell').forEach(c=>c.classList.remove('hl','act'));
+  $$('.clue').forEach(c=>c.classList.remove('act'));
+  const w = crossWords[i];
+  $$('.clue').forEach(c=>{ if(+c.dataset.i===i) c.classList.add('act'); });
+  if(wordFound(i)) return;
+  w.cells.forEach(cell=>{ if(cell) cell.el.classList.add('hl'); });
+  const target = w.cells[pos||0];
+  if(target){ target.el.classList.add('act'); target.input.focus(); }
+}
+function onCellFocus(cell){
+  if(lastCell===cell){
+    const alts = cell.words.filter(k=>!wordFound(k));
+    if(alts.length>1){
+      const cur = alts.indexOf(activeWord);
+      const nxt = alts[(cur+1)%alts.length];
+      return setActive(nxt, crossWords[nxt].cells.indexOf(cell));
+    }
+  }
+  lastCell = cell;
+  const alts = cell.words.filter(k=>!wordFound(k));
+  if(!alts.length) return;
+  setActive(alts[0], crossWords[alts[0]].cells.indexOf(cell));
+}
+function onCellInput(cell){
+  let v = cell.input.value.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  v = v.replace(/[^A-ZÑ]/g,'').slice(-1);
+  cell.input.value = v;
+  cell.words.forEach(k=>{
+    const w = crossWords[k], pos = w.cells.indexOf(cell);
+    S.crossCells[crossKey(w.r + (w.dir==='H'?0:pos), w.c + (w.dir==='H'?pos:0))] = v;
+  });
+  save(); sfx('click');
+  cell.words.forEach(k=>checkWord(k, true));
+  const w = crossWords[activeWord];
+  if(w && cell.words.includes(activeWord) && v){
+    const pos = w.cells.indexOf(cell);
+    const nxt = w.cells[pos+1];
+    if(nxt && !nxt.input.disabled) nxt.input.focus();
+    else if(nxt) nxt.input.focus();
+  }
+}
+function onCellKey(cell, e){
+  if(e.key!=='Backspace') return;
+  const w = crossWords[activeWord];
+  if(!w || !w.cells.includes(cell)) return;
+  const pos = w.cells.indexOf(cell);
+  if(!cell.input.value && pos>0){
+    e.preventDefault();
+    const pv = w.cells[pos-1];
+    if(pv && !pv.input.disabled){
+      pv.input.value='';
+      pv.input.focus();
+      pv.words.forEach(k=>{
+        const ww = crossWords[k], p2 = ww.cells.indexOf(pv);
+        S.crossCells[crossKey(ww.r + (ww.dir==='H'?0:p2), ww.c + (ww.dir==='H'?p2:0))] = '';
+      });
+      save();
+    }
+  }
+}
+function checkWord(i, auto){
+  const w = crossWords[i];
+  if(wordFound(i)) return;
+  if(!w.cells.every(c=>c && c.input.value)) return;
+  const str = w.cells.map(c=>c.input.value).join('');
+  if(norm(str)===norm(w.answer)){
+    w.cells.forEach(c=>{ c.input.disabled=true; c.el.classList.add('ok'); c.el.classList.remove('bad','hl','act'); });
+    S.crossFound.push(w.answer);
+    addXP(10); sfx('ok'); burst(60);
+    $$('.clue').forEach(c=>{ if(+c.dataset.i===i) c.classList.add('done'); });
+    updateCrossTag(); renderMap(); save();
+    toast('✅ ' + w.answer + ' correcta · +10 XP');
+    if(new Set(S.crossFound).size===CG.words.length) completePhase(4);
+  } else {
+    w.cells.forEach(c=>{ if(c && !c.input.disabled) c.el.classList.add('bad'); });
+    sfx('bad');
+    setTimeout(()=>$$('.ccell').forEach(c=>c.classList.remove('bad')), 900);
+  }
+}
+$('#crossCheck').addEventListener('click', ()=>{
+  sfx('click');
+  crossWords.forEach((_,i)=>checkWord(i, false));
+});
+$('#crossHint').addEventListener('click', ()=>{
+  if(activeWord<0 || wordFound(activeWord)){
+    const first = crossWords.findIndex((w,i)=>!wordFound(i));
+    if(first<0) return;
+    setActive(first,0);
+  }
+  if(S.crossHints<=0){ toast('Ya no quedan letras de regalo 😅'); return; }
+  const w = crossWords[activeWord];
+  const target = w.cells.find(c=>c && !c.input.disabled &&
+    c.input.value.toUpperCase() !== w.answer[w.cells.indexOf(c)]);
+  if(!target){ toast('¡Esa palabra ya está completa!'); return; }
+  S.crossHints--; $('#crossHintsLeft').textContent = S.crossHints;
+  target.input.value = w.answer[w.cells.indexOf(target)];
+  target.words.forEach(k=>{
+    const ww = crossWords[k], pos = ww.cells.indexOf(target);
+    S.crossCells[crossKey(ww.r + (ww.dir==='H'?0:pos), ww.c + (ww.dir==='H'?pos:0))] = target.input.value;
+  });
+  sfx('click'); save();
+  checkWord(activeWord, true);
+});
+
+/* ============================================================ FINAL · insignia */
+function showFinale(){
+  $('#finale').classList.remove('hidden');
+  $('#fXP').textContent = S.xp;
+  $('#fDate').textContent = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  drawBadge();
+}
+function drawBadge(){
+  const cnv = $('#badgeCanvas'), x = cnv.getContext('2d');
+  const W=cnv.width, H=cnv.height;
+  const grad = x.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,'#1b1040'); grad.addColorStop(.5,'#3a1560'); grad.addColorStop(1,'#5e1a56');
+  x.fillStyle=grad; x.fillRect(0,0,W,H);
+  x.strokeStyle='#fee440'; x.lineWidth=5;
+  rr(x,26,26,W-52,H-52,36); x.stroke();
+  x.strokeStyle='rgba(254,228,64,.35)'; x.lineWidth=2;
+  rr(x,44,44,W-88,H-88,28); x.stroke();
+  [[110,120],[1010,110],[150,520],[980,540],[560,80]].forEach(([sx,sy])=>star(x,sx,sy,9,'#fee440'));
+  const cx=W/2, cy=205, R=95;
+  x.fillStyle='#f15bb5';
+  x.beginPath(); x.moveTo(cx-42,cy-85); x.lineTo(cx+42,cy-85); x.lineTo(cx+58,cy+10); x.lineTo(cx-58,cy+10); x.closePath(); x.fill();
+  x.fillStyle='#9b5de5';
+  x.beginPath(); x.moveTo(cx-42,cy-85); x.lineTo(cx-58,cy+10); x.lineTo(cx-95,cy-20); x.closePath(); x.fill();
+  x.fillStyle='#00bbf9';
+  x.beginPath(); x.moveTo(cx+42,cy-85); x.lineTo(cx+58,cy+10); x.lineTo(cx+95,cy-20); x.closePath(); x.fill();
+  x.beginPath(); x.arc(cx,cy+8,R,0,Math.PI*2); x.fillStyle='#fee440'; x.fill();
+  x.beginPath(); x.arc(cx,cy+8,R-14,0,Math.PI*2); x.fillStyle='#f8a01e'; x.fill();
+  x.fillStyle='#5e2b00'; x.font='900 58px Segoe UI, Arial, sans-serif';
+  x.textAlign='center'; x.textBaseline='middle';
+  x.fillText('★', cx, cy+10);
+  x.fillStyle='#fee440'; x.font='900 64px Segoe UI, Arial, sans-serif';
+  x.fillText('INSIGNIA MASTER', W/2, 355);
+  const name = (S.name||'').trim() || 'Estudiante creador(a)';
+  x.fillStyle='#ffffff'; x.font='800 52px Segoe UI, Arial, sans-serif';
+  x.fillText(name, W/2, 430);
+  x.fillStyle='rgba(255,255,255,.85)'; x.font='600 30px Segoe UI, Arial, sans-serif';
+  x.fillText('Ruta Marketing Digital · Cliente, SEO, storytelling e IA', W/2, 492);
+  x.fillText('Bachillerato · 4 fases superadas · ' + S.xp + ' XP · Nivel MASTER', W/2, 538);
+  const dt = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  x.fillStyle='rgba(255,255,255,.6)'; x.font='500 26px Segoe UI, Arial, sans-serif';
+  x.fillText('Otorgada el ' + dt, W/2, 590);
+}
+function rr(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
+function star(x,cx,cy,R,color){
+  x.beginPath();
+  for(let i=0;i<10;i++){
+    const ang = Math.PI/5*i - Math.PI/2, rad = i%2===0?R:R*.45;
+    const px=cx+Math.cos(ang)*rad, py=cy+Math.sin(ang)*rad;
+    i===0 ? x.moveTo(px,py) : x.lineTo(px,py);
+  }
+  x.closePath(); x.fillStyle=color; x.fill();
+}
+$('#nameInput').addEventListener('input', e=>{ S.name=e.target.value; save(); drawBadge(); });
+$('#dlBadge').addEventListener('click', ()=>{
+  const a = document.createElement('a');
+  a.download = 'insignia-master.png';
+  a.href = $('#badgeCanvas').toDataURL('image/png');
+  a.click();
+  toast('🏆 Insignia descargada');
+});
+
+/* ============================================================ global / init */
+$('#soundBtn').addEventListener('click', ()=>{
+  S.muted = !S.muted; save();
+  $('#soundBtn').textContent = S.muted ? '🔇' : '🔊';
+  if(!S.muted) sfx('click');
+});
+$('#resetBtn').addEventListener('click', ()=>{
+  if(confirm('¿Seguro que quieres reiniciar TODO tu progreso (XP, fases e insignia)?')){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    location.reload();
+  }
+});
+(function init(){
+  $('#soundBtn').textContent = S.muted ? '🔇' : '🔊';
+  $('#nameInput').value = S.name || '';
+  renderXP(); buildSopa(); buildCards(); buildRiddles(); buildCross();
+  renderMap();
+  if(S.phases[4]) showFinale();
+})();
+
+</script>
+</body>
+</html>
